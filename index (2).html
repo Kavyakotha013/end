@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>React Upload</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding-top: 50px; }
+    .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+    input[type="file"] { margin: 20px 0; display: block; width: 100%; }
+    button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; width: 100%; }
+    button:hover:not(:disabled) { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .msg { margin-top: 15px; font-weight: bold; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+    function App() {
+      const [file, setFile] = useState(null);
+      const [status, setStatus] = useState({ type: '', text: '' });
+      const [loading, setLoading] = useState(false);
+      const handleUpload = async (e) => {
+        e.preventDefault();
+        if (!file) return;
+        setLoading(true);
+        setStatus({ type: '', text: '' });
+        const formData = new FormData();
+        formData.append('image', file);
+        try {
+          const res = await fetch('/upload', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (res.ok) {
+            setStatus({ type: 'success', text: data.message });
+            setFile(null);
+            e.target.reset();
+          } else {
+            setStatus({ type: 'error', text: data.error });
+          }
+        } catch (err) {
+          setStatus({ type: 'error', text: 'Upload failed' });
+        } finally {
+          setLoading(false);
+        }
+      };
+      return (
+        <div className="card">
+          <h2>Upload Image</h2>
+          <form onSubmit={handleUpload}>
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} required />
+            <button type="submit" disabled={loading || !file}>
+              {loading ? 'Uploading...' : 'Upload'}
+            </button>
+          </form>
+          {status.text && <div className={`msg ${status.type}`}>{status.text}</div>}
+        </div>
+      );
+    }
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
